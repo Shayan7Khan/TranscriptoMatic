@@ -5,14 +5,14 @@ import 'package:provider/provider.dart';
 // Providers
 import 'package:transcriptomatic/provider/theme_provider.dart';
 
+//Widgets
+import '../widgets/app_bar_widget.dart';
+
 class AnalyticsDashboard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    // Access themeProvider inside the build method
-    final themeProvider = Provider.of<ThemeProvider>(context);
-
     return Scaffold(
-      appBar: _buildAppBar(context, themeProvider),
+      appBar: AppBarWidget(name: "Analytics Dashboard"),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -30,29 +30,6 @@ class AnalyticsDashboard extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-
-  AppBar _buildAppBar(BuildContext context, ThemeProvider themeProvider) {
-    return AppBar(
-      title: Text("Analytics Dashboard"),
-      leading: IconButton(
-        icon: Icon(Icons.arrow_back, color: Colors.white),
-        onPressed: () {
-          // back to the previous screen
-        },
-      ),
-      actions: [
-        IconButton(
-          icon: Icon(
-            themeProvider.isDarkMode ? Icons.light_mode : Icons.dark_mode,
-            color: Colors.white,
-          ),
-          onPressed: () {
-            themeProvider.toggleTheme();
-          },
-        ),
-      ],
     );
   }
 
@@ -173,24 +150,21 @@ class AnalyticsDashboard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color:
-            isDarkMode
-                ? Colors.blue.withOpacity(0.1)
-                : Colors.blue.withOpacity(0.1),
+        color: isDarkMode
+            ? Colors.blue.withOpacity(0.1)
+            : Colors.blue.withOpacity(0.1),
         borderRadius: BorderRadius.circular(16), // Rounded corners
         border: Border.all(
-          color:
-              isDarkMode
-                  ? Colors.blue.withOpacity(0.3)
-                  : Colors.blue.withOpacity(0.3),
+          color: isDarkMode
+              ? Colors.blue.withOpacity(0.3)
+              : Colors.blue.withOpacity(0.3),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color:
-                isDarkMode
-                    ? Colors.black.withOpacity(0.2)
-                    : Colors.grey.withOpacity(0.2),
+            color: isDarkMode
+                ? Colors.black.withOpacity(0.2)
+                : Colors.grey.withOpacity(0.2),
             blurRadius: 4,
             offset: Offset(0, 2),
           ),
@@ -200,12 +174,11 @@ class AnalyticsDashboard extends StatelessWidget {
       child: Text(
         keyword,
         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-          color:
-              isDarkMode
+              color: isDarkMode
                   ? Colors.white
                   : Colors.blue, // Text color based on theme
-          fontWeight: FontWeight.w500,
-        ),
+              fontWeight: FontWeight.w500,
+            ),
       ),
     );
   }

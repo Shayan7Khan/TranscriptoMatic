@@ -1,12 +1,11 @@
 // Packages
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 // Pages
 import 'package:transcriptomatic/screens/splash_screen.dart';
 import 'package:transcriptomatic/screens/home_screen.dart';
-import 'package:transcriptomatic/screens/transcription_page.dart';
+import 'package:transcriptomatic/screens/transcription_screen.dart';
 import 'package:transcriptomatic/screens/analytics_dashboard_screen.dart';
 
 // Services
@@ -15,29 +14,41 @@ import 'package:transcriptomatic/services/navigation_service.dart';
 // Provider
 import 'package:transcriptomatic/provider/theme_provider.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-
-  // Initializing Supabase
-  await Supabase.initialize(
-    url: 'https://mvkjujnfpofbwuasrpjb.supabase.co',
-    anonKey:
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im12a2p1am5mcG9mYnd1YXNycGpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDA2NDIxMTMsImV4cCI6MjA1NjIxODExM30.qdbTvcDUd6M3wLgrmv1rBhl4NY0A_hU1fseNPliFgkg',
-  );
-  print('Supabase initialized');
-
+void main() {
   runApp(
-    SplashPage(
-      onInitializationComplete: () {
-        runApp(
-          ChangeNotifierProvider(
-            create: (_) => ThemeProvider(),
-            child: const MainApp(),
-          ),
-        );
-      },
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+      ],
+      child: const MyApp(),
     ),
   );
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'TranscriptoMatic',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: SplashPage(
+        onInitializationComplete: () {
+          runApp(
+            MultiProvider(
+              providers: [
+                ChangeNotifierProvider(create: (_) => ThemeProvider()),
+              ],
+              child: const MainApp(),
+            ),
+          );
+        },
+      ),
+    );
+  }
 }
 
 class MainApp extends StatelessWidget {
@@ -55,7 +66,7 @@ class MainApp extends StatelessWidget {
       routes: {
         '/home': (BuildContext context) => HomePage(),
         '/transcription': (BuildContext context) =>
-            TranscriptionPage(audioId: 'audioid'),
+            TranscriptionScreen(audioId: 'audioid'),
         '/dashboard': (BuildContext context) => AnalyticsDashboard(),
       },
     );

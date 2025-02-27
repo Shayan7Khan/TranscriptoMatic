@@ -1,24 +1,20 @@
 // Packages
 import 'package:flutter/material.dart';
-import 'package:get_it/get_it.dart';
 import 'package:provider/provider.dart';
 
 // Providers
 import 'package:transcriptomatic/provider/theme_provider.dart';
 
-// Services
-import '../services/navigation_service.dart';
-
-class TranscriptionPage extends StatefulWidget {
+class TranscriptionScreen extends StatefulWidget {
   final String audioId;
 
-  TranscriptionPage({required this.audioId});
+  TranscriptionScreen({required this.audioId});
 
   @override
-  _TranscriptionPageState createState() => _TranscriptionPageState();
+  _TranscriptionScreenState createState() => _TranscriptionScreenState();
 }
 
-class _TranscriptionPageState extends State<TranscriptionPage> {
+class _TranscriptionScreenState extends State<TranscriptionScreen> {
   bool _isProcessing = false;
   bool _showSpeakerDetection = false;
   bool _showTimestamps = false;
@@ -45,8 +41,7 @@ class _TranscriptionPageState extends State<TranscriptionPage> {
     // Simulate transcription
     await Future.delayed(Duration(seconds: 5)); // Simulate processing delay
     setState(() {
-      _transcribedText =
-          "Welcome everyone to today's meeting.\n\n"
+      _transcribedText = "Welcome everyone to today's meeting.\n\n"
           "Thank you for the introduction. I've\n"
           "prepared a detailed analysis of our\n"
           "revenue trends over the past quarter.\n\n"
