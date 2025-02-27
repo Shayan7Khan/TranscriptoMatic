@@ -17,31 +17,23 @@ class _SplashPageState extends State<SplashPage> {
   @override
   void initState() {
     super.initState();
-    Future.delayed(Duration(seconds: 2)).then((_) {
-      _setup().then((_) {
-        widget.onInitializationComplete();
-      });
+    Future.delayed(const Duration(seconds: 2)).then((_) async {
+      await _setup();
+      widget.onInitializationComplete();
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Transcriptomatic',
-      theme: ThemeData(
-        scaffoldBackgroundColor: const Color.fromARGB(255, 90, 79, 255),
-      ),
-      home: Scaffold(
-        body: Center(
-          child: Container(
-            height: 200,
-            width: 200,
-            decoration: const BoxDecoration(
-              image: DecorationImage(
-                fit: BoxFit.contain,
-                image: AssetImage('assets/images/splash-image.png'),
-              ),
+    return Scaffold(
+      body: Center(
+        child: Container(
+          height: 200,
+          width: 200,
+          decoration: const BoxDecoration(
+            image: DecorationImage(
+              fit: BoxFit.contain,
+              image: AssetImage('assets/images/splash-image.png'),
             ),
           ),
         ),
@@ -50,12 +42,12 @@ class _SplashPageState extends State<SplashPage> {
   }
 
   Future<void> _setup() async {
-    //will be initalising firebase her.....
     _registerServices();
   }
 
   void _registerServices() {
-    //registring navigation service
+    // Registering navigation service
+
     GetIt.instance.registerSingleton<NavigationService>(NavigationService());
   }
 }

@@ -1,6 +1,7 @@
 // Packages
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 // Pages
 import 'package:transcriptomatic/screens/splash_screen.dart';
@@ -11,17 +12,27 @@ import 'package:transcriptomatic/screens/analytics_dashboard_screen.dart';
 // Services
 import 'package:transcriptomatic/services/navigation_service.dart';
 
-//  Provider
+// Provider
 import 'package:transcriptomatic/provider/theme_provider.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initializing Supabase
+  await Supabase.initialize(
+    url: 'https://mvkjujnfpofbwuasrpjb.supabase.co',
+    anonKey:
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im12a2p1am5mcG9mYnd1YXNycGpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDA2NDIxMTMsImV4cCI6MjA1NjIxODExM30.qdbTvcDUd6M3wLgrmv1rBhl4NY0A_hU1fseNPliFgkg',
+  );
+  print('Supabase initialized');
+
   runApp(
     SplashPage(
       onInitializationComplete: () {
         runApp(
           ChangeNotifierProvider(
             create: (_) => ThemeProvider(),
-            child: MainApp(),
+            child: const MainApp(),
           ),
         );
       },
@@ -43,19 +54,18 @@ class MainApp extends StatelessWidget {
       initialRoute: '/home',
       routes: {
         '/home': (BuildContext context) => HomePage(),
-        '/transcription':
-            (BuildContext context) => TranscriptionPage(audioId: 'audioid'),
+        '/transcription': (BuildContext context) =>
+            TranscriptionPage(audioId: 'audioid'),
         '/dashboard': (BuildContext context) => AnalyticsDashboard(),
       },
     );
   }
 
-  // Light Theme
   ThemeData _buildLightTheme() {
     return ThemeData(
       primarySwatch: Colors.blue,
       scaffoldBackgroundColor: Colors.white,
-      appBarTheme: AppBarTheme(
+      appBarTheme: const AppBarTheme(
         backgroundColor: Colors.blue,
         elevation: 0,
         titleTextStyle: TextStyle(
@@ -70,10 +80,10 @@ class MainApp extends StatelessWidget {
         ),
         elevation: 2,
         color: Colors.white,
-        margin: EdgeInsets.all(16.0),
+        margin: const EdgeInsets.all(16.0),
       ),
       textTheme: TextTheme(
-        titleLarge: TextStyle(
+        titleLarge: const TextStyle(
           fontSize: 20,
           fontWeight: FontWeight.bold,
           color: Colors.black,
@@ -84,7 +94,6 @@ class MainApp extends StatelessWidget {
     );
   }
 
-  // Dark Theme
   ThemeData _buildDarkTheme() {
     return ThemeData(
       primarySwatch: Colors.indigo,
@@ -92,7 +101,7 @@ class MainApp extends StatelessWidget {
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.grey[850],
         elevation: 0,
-        titleTextStyle: TextStyle(
+        titleTextStyle: const TextStyle(
           fontSize: 24,
           fontWeight: FontWeight.bold,
           color: Colors.white,
@@ -104,10 +113,10 @@ class MainApp extends StatelessWidget {
         ),
         elevation: 2,
         color: Colors.grey[850],
-        margin: EdgeInsets.all(16.0),
+        margin: const EdgeInsets.all(16.0),
       ),
       textTheme: TextTheme(
-        titleLarge: TextStyle(
+        titleLarge: const TextStyle(
           fontSize: 20,
           fontWeight: FontWeight.bold,
           color: Colors.white,
