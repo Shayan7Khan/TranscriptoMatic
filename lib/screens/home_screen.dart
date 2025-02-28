@@ -30,7 +30,7 @@ class _HomePageState extends State<HomePage> {
 
   static List<Widget> _widgetOptions = <Widget>[
     HomeScreenContent(),
-    TranscriptionScreen(audioId: 'audioId'),
+    TranscriptionScreen(),
     AnalyticsDashboard(),
   ];
 
@@ -377,7 +377,7 @@ class _HomeScreenContentState extends State<HomeScreenContent> {
                   ),
                   title: Text(
                     "Recording ${index + 1}",
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                    style: Theme.of(context).textTheme.bodyLarge,
                   ),
                   subtitle: Text(
                     "Tap to play",

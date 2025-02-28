@@ -1,5 +1,13 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.example.transcriptomatic">
+
+     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" 
+                 android:maxSdkVersion="28" /> <!-- For devices below Android 10 -->
+
+
+
     <application
+    android:requestLegacyExternalStorage="true"
         android:label="transcriptomatic"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">

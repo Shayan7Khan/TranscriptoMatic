@@ -65,8 +65,7 @@ class MainApp extends StatelessWidget {
       initialRoute: '/home',
       routes: {
         '/home': (BuildContext context) => HomePage(),
-        '/transcription': (BuildContext context) =>
-            TranscriptionScreen(audioId: 'audioid'),
+        '/transcription': (BuildContext context) => TranscriptionScreen(),
         '/dashboard': (BuildContext context) => AnalyticsDashboard(),
       },
     );
@@ -101,6 +100,8 @@ class MainApp extends StatelessWidget {
         ),
         bodyMedium: TextStyle(fontSize: 16, color: Colors.grey[800]),
         titleMedium: TextStyle(fontSize: 14, color: Colors.grey[600]),
+        bodyLarge: TextStyle(
+            fontSize: 15, fontWeight: FontWeight.bold, color: Colors.black),
       ),
     );
   }
@@ -108,9 +109,9 @@ class MainApp extends StatelessWidget {
   ThemeData _buildDarkTheme() {
     return ThemeData(
       primarySwatch: Colors.indigo,
-      scaffoldBackgroundColor: Colors.grey[900],
+      scaffoldBackgroundColor: Colors.grey[900]!,
       appBarTheme: AppBarTheme(
-        backgroundColor: Colors.grey[850],
+        backgroundColor: Colors.grey[850]!,
         elevation: 0,
         titleTextStyle: const TextStyle(
           fontSize: 24,
@@ -123,18 +124,22 @@ class MainApp extends StatelessWidget {
           borderRadius: BorderRadius.circular(16.0),
         ),
         elevation: 2,
-        color: Colors.grey[850],
+        color: Colors.grey[850]!,
         margin: const EdgeInsets.all(16.0),
       ),
       textTheme: TextTheme(
-        titleLarge: const TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-        ),
-        bodyMedium: TextStyle(fontSize: 16, color: Colors.grey[300]),
-        titleMedium: TextStyle(fontSize: 14, color: Colors.grey[400]),
-      ),
+          titleLarge: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+          bodyMedium: TextStyle(fontSize: 16, color: Colors.grey[300]),
+          titleMedium: TextStyle(fontSize: 14, color: Colors.grey[400]),
+          bodyLarge: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          )),
     );
   }
 }
