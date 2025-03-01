@@ -1,7 +1,17 @@
+import 'dart:io';
+
+//Packages
 import 'package:flutter/material.dart';
 import 'package:open_file/open_file.dart';
+
+//Services
 import '../services/database_service.dart';
+
+//Widgets
 import '../widgets/app_bar_widget.dart';
+
+//Pages
+import 'analytics_dashboard_screen.dart';
 
 class TranscriptionScreen extends StatefulWidget {
   @override
@@ -10,6 +20,7 @@ class TranscriptionScreen extends StatefulWidget {
 
 class _TranscriptionScreenState extends State<TranscriptionScreen> {
   final DatabaseService _databaseService = DatabaseService();
+
   List<String> _audioFiles = [];
   String? _selectedAudioUrl;
   String? _transcription;
@@ -26,12 +37,40 @@ class _TranscriptionScreenState extends State<TranscriptionScreen> {
     setState(() => _isLoading = true);
     try {
       List<String> files = await _databaseService.fetchAudioFiles();
-      setState(() => _audioFiles = files);
+      print('Fetched audio URLs: $files');
+
+      List<String> validFiles = [];
+      for (String url in files) {
+        if (await _fileExists(url) && !_isPlaceholder(url)) {
+          validFiles.add(url);
+        } else {
+          print('Invalid or placeholder URL: $url');
+        }
+      }
+
+      setState(() => _audioFiles = validFiles);
+      print('Valid audio files: $_audioFiles');
     } catch (e) {
       _showErrorSnackbar("Error fetching audio files: $e");
     } finally {
       setState(() => _isLoading = false);
     }
+  }
+
+  Future<bool> _fileExists(String url) async {
+    try {
+      final request = await HttpClient().headUrl(Uri.parse(url));
+      final response = await request.close();
+      return response.statusCode == 200;
+    } catch (e) {
+      print('Error checking file existence: $e');
+      return false;
+    }
+  }
+
+  bool _isPlaceholder(String url) {
+    // Check if the URL contains '.emptyFolderPlaceholder' to identify it as a placeholder
+    return url.contains('.emptyFolderPlaceholder');
   }
 
   Future<void> _transcribeAudio() async {
@@ -45,11 +84,17 @@ class _TranscriptionScreenState extends State<TranscriptionScreen> {
     try {
       String? result =
           await _databaseService.transcribeAudioFromUrl(_selectedAudioUrl!);
-      setState(() {
-        _transcription = result != null && result.contains("429")
-            ? "Rate limit exceeded. Try again later."
-            : result;
-      });
+      if (result != null && !result.contains("429")) {
+        setState(() {
+          _transcription = result;
+        });
+      } else {
+        setState(() {
+          _transcription = result != null && result.contains("429")
+              ? "Rate limit exceeded. Try again later."
+              : result;
+        });
+      }
     } catch (e) {
       _showErrorSnackbar("Error transcribing audio: $e");
     } finally {
@@ -160,14 +205,20 @@ class _TranscriptionScreenState extends State<TranscriptionScreen> {
                     child: CircularProgressIndicator(
                     color: Colors.blueAccent,
                   ))
-                : ListView.separated(
-                    shrinkWrap: true,
-                    physics: NeverScrollableScrollPhysics(),
-                    itemCount: _audioFiles.length,
-                    separatorBuilder: (_, __) =>
-                        Divider(height: 1, color: theme.dividerColor),
-                    itemBuilder: (context, index) =>
-                        _buildAudioItem(index, theme),
+                : Container(
+                    height: 200, // Set a fixed height for the audio list
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      physics: AlwaysScrollableScrollPhysics(),
+                      itemCount: _audioFiles.length,
+                      separatorBuilder: (_, __) => Divider(
+                        height: 1,
+                        color: theme.dividerColor,
+                        thickness: 1,
+                      ),
+                      itemBuilder: (context, index) =>
+                          _buildAudioItem(index, theme),
+                    ),
                   ),
             SizedBox(height: 16),
             ElevatedButton.icon(
@@ -201,7 +252,8 @@ class _TranscriptionScreenState extends State<TranscriptionScreen> {
       ),
       title: Text(
         "Recording ${index + 1}",
-        style: Theme.of(context).textTheme.bodyLarge,
+        style: TextStyle(
+            fontSize: 15, fontWeight: FontWeight.bold, color: Colors.black),
       ),
       subtitle: Text(
         "Tap to select",
@@ -248,6 +300,23 @@ class _TranscriptionScreenState extends State<TranscriptionScreen> {
                           EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     ),
                     onPressed: _saveAsPdf,
+                  ),
+                if (_transcription != null)
+                  ElevatedButton.icon(
+                    icon: Icon(Icons.insights, color: Colors.white),
+                    label: Text("View Analysis"),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => AnalyticsDashboard()),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                    ),
                   ),
               ],
             ),

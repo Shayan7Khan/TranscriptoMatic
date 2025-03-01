@@ -1,55 +1,70 @@
-// Packages
+//Packages
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-
-// Providers
-import 'package:transcriptomatic/provider/theme_provider.dart';
 
 //Widgets
 import '../widgets/app_bar_widget.dart';
 
-class AnalyticsDashboard extends StatelessWidget {
+//Providers
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:provider/provider.dart' as legacy_provider;
+import 'package:transcriptomatic/provider/theme_provider.dart';
+import '../provider/analysis_provider.dart';
+
+class AnalyticsDashboard extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final analysisAsync = ref.watch(analysisProvider);
+
     return Scaffold(
       appBar: AppBarWidget(name: "Analytics Dashboard"),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildSectionTitle(context, "Analytics Dashboard"),
-              SizedBox(height: 16),
-              _buildSummaryCards(context),
-              SizedBox(height: 24),
-              _buildSentimentAnalysis(context),
-              SizedBox(height: 24),
-              Center(child: _buildTopKeywords(context)),
-            ],
+      body: analysisAsync.when(
+        loading: () => Center(child: CircularProgressIndicator()),
+        error: (error, stack) => Center(child: Text('Error: $error')),
+        data: (data) => SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildSectionTitle(context, "Analytics Dashboard"),
+                SizedBox(height: 16),
+                _buildSummaryCards(context, data),
+                SizedBox(height: 24),
+                _buildSentimentAnalysis(context, data['sentiment']),
+                SizedBox(height: 24),
+                Center(child: _buildTopKeywords(context, data['keywords'])),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
+  //function to build section title
   Widget _buildSectionTitle(BuildContext context, String title) {
     return Text(
       title,
-      style: Theme.of(context).textTheme.titleLarge, // Replaces headline6
+      style: Theme.of(context).textTheme.titleLarge,
     );
   }
 
-  Widget _buildSummaryCards(BuildContext context) {
+  //function to build summary cards
+  Widget _buildSummaryCards(BuildContext context, Map<String, dynamic> data) {
     return Row(
       children: [
-        Expanded(child: _buildSummaryCard(context, "Total Recordings", "156")),
+        Expanded(
+            child: _buildSummaryCard(context, "Total Recordings",
+                data['totalRecordings'].toString())),
         SizedBox(width: 16),
-        Expanded(child: _buildSummaryCard(context, "Hours Analyzed", "42.5")),
+        Expanded(
+            child: _buildSummaryCard(context, "Hours Analyzed",
+                data['totalHours'].toStringAsFixed(1))),
       ],
     );
   }
 
+  //function to build summary card
   Widget _buildSummaryCard(BuildContext context, String title, String value) {
     return Card(
       child: Padding(
@@ -73,7 +88,10 @@ class AnalyticsDashboard extends StatelessWidget {
     );
   }
 
-  Widget _buildSentimentAnalysis(BuildContext context) {
+  //function to build sentiment analysis
+  Widget _buildSentimentAnalysis(
+      BuildContext context, Map<String, double> sentiment) {
+    print('Sentiment data: $sentiment'); // Debug statement
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -88,9 +106,30 @@ class AnalyticsDashboard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildSentimentIndicator(context, "Positive", 45, Colors.green),
-                _buildSentimentIndicator(context, "Neutral", 35, Colors.orange),
-                _buildSentimentIndicator(context, "Negative", 20, Colors.red),
+                _buildSentimentIndicator(
+                  context,
+                  "Positive",
+                  sentiment['positive']?.isFinite == true
+                      ? sentiment['positive']!.toInt()
+                      : 0,
+                  Colors.green,
+                ),
+                _buildSentimentIndicator(
+                  context,
+                  "Neutral",
+                  sentiment['neutral']?.isFinite == true
+                      ? sentiment['neutral']!.toInt()
+                      : 0,
+                  Colors.orange,
+                ),
+                _buildSentimentIndicator(
+                  context,
+                  "Negative",
+                  sentiment['negative']?.isFinite == true
+                      ? sentiment['negative']!.toInt()
+                      : 0,
+                  Colors.red,
+                ),
               ],
             ),
           ],
@@ -99,6 +138,7 @@ class AnalyticsDashboard extends StatelessWidget {
     );
   }
 
+  //function to build sentiment indicator
   Widget _buildSentimentIndicator(
     BuildContext context,
     String label,
@@ -121,7 +161,9 @@ class AnalyticsDashboard extends StatelessWidget {
     );
   }
 
-  Widget _buildTopKeywords(BuildContext context) {
+  //function to build top keywords
+  Widget _buildTopKeywords(BuildContext context, List<String> keywords) {
+    print('Keywords data: $keywords'); // Debug statement
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -133,10 +175,10 @@ class AnalyticsDashboard extends StatelessWidget {
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: [
-                _buildKeywordChip(context, "Reading (1.5)"),
-                _buildKeywordChip(context, "Reading (2.5)"),
-              ],
+              children: keywords
+                  .take(5)
+                  .map((keyword) => _buildKeywordChip(context, keyword))
+                  .toList(),
             ),
           ],
         ),
@@ -144,8 +186,10 @@ class AnalyticsDashboard extends StatelessWidget {
     );
   }
 
+  //function to build keyword chip
   Widget _buildKeywordChip(BuildContext context, String keyword) {
-    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    final themeProvider =
+        legacy_provider.Provider.of<ThemeProvider>(context, listen: false);
     final isDarkMode = themeProvider.isDarkMode;
 
     return Container(
@@ -153,7 +197,7 @@ class AnalyticsDashboard extends StatelessWidget {
         color: isDarkMode
             ? Colors.blue.withOpacity(0.1)
             : Colors.blue.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(16), // Rounded corners
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isDarkMode
               ? Colors.blue.withOpacity(0.3)
@@ -174,9 +218,7 @@ class AnalyticsDashboard extends StatelessWidget {
       child: Text(
         keyword,
         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: isDarkMode
-                  ? Colors.white
-                  : Colors.blue, // Text color based on theme
+              color: isDarkMode ? Colors.white : Colors.blue,
               fontWeight: FontWeight.w500,
             ),
       ),

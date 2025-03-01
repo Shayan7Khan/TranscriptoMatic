@@ -1,18 +1,21 @@
+import 'dart:io';
+import 'dart:async';
+
 // Packages
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:file_picker/file_picker.dart';
 
-import 'dart:io';
-import 'dart:async';
+//Screens
+import 'package:transcriptomatic/screens/analytics_dashboard_screen.dart';
+import 'transcription_screen.dart';
 
 // Providers
 import 'package:transcriptomatic/provider/theme_provider.dart';
-import 'package:transcriptomatic/screens/analytics_dashboard_screen.dart';
-import 'transcription_screen.dart';
+
+import 'package:provider/provider.dart';
 
 // Services
 import 'package:transcriptomatic/services/database_service.dart';
@@ -28,12 +31,14 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
 
-  static List<Widget> _widgetOptions = <Widget>[
+  // List of widgets for the bottom navigation bar
+  static List<Widget> widgetOptions = <Widget>[
     HomeScreenContent(),
     TranscriptionScreen(),
     AnalyticsDashboard(),
   ];
 
+// Function to handle bottom navigation bar item tap
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
@@ -45,7 +50,7 @@ class _HomePageState extends State<HomePage> {
     final themeProvider = Provider.of<ThemeProvider>(context);
 
     return Scaffold(
-      body: _widgetOptions.elementAt(_selectedIndex), // No AppBar here
+      body: widgetOptions.elementAt(_selectedIndex), // No AppBar here
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
@@ -95,26 +100,56 @@ class _HomeScreenContentState extends State<HomeScreenContent> {
     _fetchRecordings();
   }
 
+  // Function to fetch recordings from Supabase
   Future<void> _fetchRecordings() async {
     setState(() {
       _recordings = []; // Clear previous recordings
-      print('Recordings cleared');
     });
 
     final List<String> audioUrls = await _databaseService.fetchAudioFiles();
     print('Fetched audio URLs: $audioUrls');
 
+    // Filter out invalid or placeholder URLs
+    List<Map<String, dynamic>> validRecordings = [];
+    for (String url in audioUrls) {
+      if (await _fileExists(url) && !_isPlaceholder(url)) {
+        validRecordings.add({'url': url});
+      } else {
+        print('Invalid or placeholder URL: $url');
+      }
+    }
+
     setState(() {
-      _recordings = audioUrls.map((url) => {'url': url}).toList();
-      print('Updated recordings: $_recordings');
+      _recordings = validRecordings;
+      print('Valid recordings: $_recordings');
     });
   }
 
+// Function to check if the file exists
+  Future<bool> _fileExists(String url) async {
+    try {
+      final request = await HttpClient().headUrl(Uri.parse(url));
+      final response = await request.close();
+      return response.statusCode == 200;
+    } catch (e) {
+      print('Error checking file existence: $e');
+      return false;
+    }
+  }
+
+// Function to check if the URL is a placeholder
+  bool _isPlaceholder(String url) {
+    // Check if the URL contains '.emptyFolderPlaceholder' to identify it as a placeholder
+    return url.contains('.emptyFolderPlaceholder');
+  }
+
+// Function to initialize the recorder
   Future<void> _initializeRecorder() async {
     await _recorder!.openRecorder();
     await Permission.microphone.request();
   }
 
+  // Function to start the timer
   void _startTimer() {
     _recordDuration = 0;
     _timer = Timer.periodic(Duration(seconds: 1), (Timer t) {
@@ -124,10 +159,12 @@ class _HomeScreenContentState extends State<HomeScreenContent> {
     });
   }
 
+// Function to stop the timer
   void _stopTimer() {
     _timer?.cancel();
   }
 
+  // Function to start recording
   Future<void> _startRecording() async {
     final directory = await getApplicationDocumentsDirectory();
     _filePath = '${directory.path}/audio.aac';
@@ -139,6 +176,7 @@ class _HomeScreenContentState extends State<HomeScreenContent> {
     _startTimer();
   }
 
+// Function to stop recording
   Future<void> _stopRecording() async {
     await _recorder!.stopRecorder();
     setState(() {
@@ -221,6 +259,7 @@ class _HomeScreenContentState extends State<HomeScreenContent> {
     super.dispose();
   }
 
+  // Function to format the duration in mm:ss format
   String _formatDuration(int seconds) {
     final int minutes = seconds ~/ 60;
     final int remainingSeconds = seconds % 60;
@@ -257,6 +296,7 @@ class _HomeScreenContentState extends State<HomeScreenContent> {
     );
   }
 
+  // Function to build the section title
   Widget _buildSectionTitle(BuildContext context, String title) {
     return Text(
       title,
@@ -264,6 +304,7 @@ class _HomeScreenContentState extends State<HomeScreenContent> {
     );
   }
 
+  // Function to build the record audio card
   Widget _buildRecordAudioCard(BuildContext context) {
     return Card(
       child: Padding(
@@ -316,6 +357,7 @@ class _HomeScreenContentState extends State<HomeScreenContent> {
     );
   }
 
+  // Function to build the upload audio card
   Widget _buildUploadAudioCard(BuildContext context) {
     return Card(
       child: Padding(
@@ -343,6 +385,7 @@ class _HomeScreenContentState extends State<HomeScreenContent> {
     );
   }
 
+  // Function to build the recording list
   Widget _buildRecordingList() {
     return _recordings.isEmpty
         ? Center(
@@ -401,7 +444,8 @@ class _HomeScreenContentState extends State<HomeScreenContent> {
     player.startPlayer(fromURI: url);
   }
 
-  Widget _buildRecordingItem(String title, String duration) {
+  // Function to build keyword chip
+  Widget buildRecordingItem(String title, String duration) {
     return Card(
       child: ListTile(
         leading: Container(
@@ -423,6 +467,7 @@ class _HomeScreenContentState extends State<HomeScreenContent> {
     );
   }
 
+// Function to build the button style
   ButtonStyle _buttonStyle() {
     return ElevatedButton.styleFrom(
       backgroundColor: Colors.blue,

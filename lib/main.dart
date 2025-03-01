@@ -1,6 +1,7 @@
 // Packages
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:provider/provider.dart' as legacy_provider;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Pages
 import 'package:transcriptomatic/screens/splash_screen.dart';
@@ -16,11 +17,14 @@ import 'package:transcriptomatic/provider/theme_provider.dart';
 
 void main() {
   runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => ThemeProvider()),
-      ],
-      child: const MyApp(),
+    ProviderScope(
+      child: legacy_provider.MultiProvider(
+        providers: [
+          legacy_provider.ChangeNotifierProvider(
+              create: (_) => ThemeProvider()),
+        ],
+        child: const MyApp(),
+      ),
     ),
   );
 }
@@ -38,11 +42,14 @@ class MyApp extends StatelessWidget {
       home: SplashPage(
         onInitializationComplete: () {
           runApp(
-            MultiProvider(
-              providers: [
-                ChangeNotifierProvider(create: (_) => ThemeProvider()),
-              ],
-              child: const MainApp(),
+            ProviderScope(
+              child: legacy_provider.MultiProvider(
+                providers: [
+                  legacy_provider.ChangeNotifierProvider(
+                      create: (_) => ThemeProvider()),
+                ],
+                child: const MainApp(),
+              ),
             ),
           );
         },
@@ -56,7 +63,7 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
+    final themeProvider = legacy_provider.Provider.of<ThemeProvider>(context);
 
     return MaterialApp(
       title: 'TranscriptoMatic',
