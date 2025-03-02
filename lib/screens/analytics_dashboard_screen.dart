@@ -32,7 +32,9 @@ class AnalyticsDashboard extends ConsumerWidget {
                 SizedBox(height: 24),
                 _buildSentimentAnalysis(context, data['sentiment']),
                 SizedBox(height: 24),
-                Center(child: _buildTopKeywords(context, data['keywords'])),
+                Center(
+                    child: _buildTopKeywords(context,
+                        (data['keywords'] as List<dynamic>).cast<String>())),
               ],
             ),
           ),

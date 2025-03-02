@@ -2,6 +2,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart' as legacy_provider;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'dart:async';
 
 // Pages
 import 'package:transcriptomatic/screens/splash_screen.dart';
@@ -29,8 +31,22 @@ void main() {
   );
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class MyApp extends StatefulWidget {
+  const MyApp({Key? key}) : super(key: key);
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  bool _initialized = false;
+  String? _initializationMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _initialized = false;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,22 +55,40 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: SplashPage(
-        onInitializationComplete: () {
-          runApp(
-            ProviderScope(
-              child: legacy_provider.MultiProvider(
-                providers: [
-                  legacy_provider.ChangeNotifierProvider(
-                      create: (_) => ThemeProvider()),
-                ],
-                child: const MainApp(),
-              ),
-            ),
-          );
-        },
-      ),
+      home: !_initialized
+          ? SplashPage(onInitializationComplete: _onInitializationComplete)
+          : (_initializationMessage != null
+              ? Scaffold(
+                  body: Center(
+                    child: Text(
+                        'Supabase Initialization Failed: $_initializationMessage'),
+                  ),
+                )
+              : const MainApp()),
     );
+  }
+
+  Future<void> _initializeSupabase() async {
+    try {
+      await Supabase.initialize(
+        url: 'https://mvkjujnfpofbwuasrpjb.supabase.co',
+        anonKey:
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im12a2p1am5mcG9mYnd1YXNycGpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDA2NDIxMTMsImV4cCI6MjA1NjIxODExM30.qdbTvcDUd6M3wLgrmv1rBhl4NY0A_hU1fseNPliFgkg',
+      );
+      print('Supabase initialized successfully');
+      setState(() {
+        _initialized = true;
+      });
+    } catch (e) {
+      print('Supabase initialization error: $e');
+      setState(() {
+        _initializationMessage = e.toString();
+      });
+    }
+  }
+
+  void _onInitializationComplete() {
+    _initializeSupabase();
   }
 }
 
@@ -147,6 +181,19 @@ class MainApp extends StatelessWidget {
             fontWeight: FontWeight.bold,
             color: Colors.white,
           )),
+    );
+  }
+}
+
+class SplashPageLoading extends StatelessWidget {
+  const SplashPageLoading({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      body: Center(
+        child: CircularProgressIndicator(),
+      ),
     );
   }
 }

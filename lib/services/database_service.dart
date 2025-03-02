@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:collection';
+import 'dart:async';
 
 //Packages
 import 'package:dio/dio.dart';
@@ -28,6 +29,7 @@ class DatabaseService {
   static const _uploadUrl = "https://api.assemblyai.com/v2/upload";
 
   // Upload audio file to Supabase storage
+  @pragma('vm:entry-point')
   Future<String?> uploadAudio(File audioFile) async {
     try {
       final fileName =
@@ -40,6 +42,7 @@ class DatabaseService {
   }
 
   // Fetch list of audio files from Supabase storage
+  @pragma('vm:entry-point')
   Future<List<String>> fetchAudioFiles() async {
     try {
       final response = await _client.storage.from('audio').list();
@@ -52,6 +55,7 @@ class DatabaseService {
   }
 
   // Transcribe audio file from URL using AssemblyAI
+  @pragma('vm:entry-point')
   Future<String?> transcribeAudioFromUrl(String audioUrl) async {
     try {
       // 1. Download audio from Supabase URL to a temporary file
@@ -116,6 +120,7 @@ class DatabaseService {
   }
 
   // Get audio duration in seconds
+  @pragma('vm:entry-point')
   Future<double> _getAudioDuration(File file) async {
     try {
       final player = just_audio.AudioPlayer();
@@ -129,6 +134,7 @@ class DatabaseService {
   }
 
   // Save transcription as PDF file
+  @pragma('vm:entry-point')
   Future<File?> saveTranscriptionAsPdf(String transcription) async {
     try {
       final pdf = pw.Document();
@@ -202,6 +208,7 @@ class DatabaseService {
   }
 
   // Analyze transcription text for sentiment and keywords
+  @pragma('vm:entry-point')
   Future<Map<String, dynamic>> analyzeTranscription(String text) async {
     try {
       final model = GenerativeModel(
@@ -245,6 +252,7 @@ class DatabaseService {
   }
 
   // Parse sentiment analysis from text
+  @pragma('vm:entry-point')
   Map<String, double> _parseSentimentFromText(String text) {
     final sentiment = {'positive': 0.0, 'neutral': 0.0, 'negative': 0.0};
 
@@ -266,6 +274,7 @@ class DatabaseService {
   }
 
   // Extract keywords from text
+  @pragma('vm:entry-point')
   Future<List<String>> _extractKeywords(String text) async {
     try {
       final model = GenerativeModel(
@@ -284,7 +293,7 @@ class DatabaseService {
 
       // Clean up keywords to remove unwanted characters
       final cleanedKeywords = keywords.map((keyword) {
-        return keyword.replaceAll(RegExp(r'[\[\]\(\)\{\}]'), '').trim();
+        return keyword.replaceAll(RegExp(r'[\[\]\(\)\{\}:,]'), '').trim();
       }).toList();
 
       return cleanedKeywords;
@@ -294,6 +303,7 @@ class DatabaseService {
   }
 
   // Parse sentiment data from dynamic input
+  @pragma('vm:entry-point')
   Map<String, double> parseSentiment(dynamic sentiment) {
     try {
       if (sentiment is! Map<String, dynamic>) {
@@ -326,6 +336,7 @@ class DatabaseService {
   }
 
   // Parse keywords from dynamic input
+  @pragma('vm:entry-point')
   List<String> parseKeywords(dynamic keywords) {
     try {
       return (keywords as List<dynamic>?)?.whereType<String>().toList() ?? [];
@@ -334,7 +345,8 @@ class DatabaseService {
     }
   }
 
-  // Save analysis data to Supabase
+  // Modified saveAnalysisData
+  @pragma('vm:entry-point')
   Future<void> saveAnalysisData(Map<String, dynamic> analysis) async {
     try {
       final sanitized = {
@@ -351,7 +363,8 @@ class DatabaseService {
     } catch (e) {}
   }
 
-  // Get aggregated analysis data from Supabase
+  // Modified getAggregatedAnalysis
+  @pragma('vm:entry-point')
   Future<Map<String, dynamic>> getAggregatedAnalysis() async {
     try {
       final response = await _client.from('analytics').select();
@@ -387,6 +400,7 @@ class DatabaseService {
   }
 
   // Get total number of valid recordings from Supabase
+  @pragma('vm:entry-point')
   Future<int> _getTotalRecordings() async {
     try {
       final response = await _client.storage.from('audio').list();
@@ -399,12 +413,14 @@ class DatabaseService {
   }
 
   // Check if the file is a placeholder
+  @pragma('vm:entry-point')
   bool _isPlaceholder(String url) {
     // Check if the URL contains '.emptyFolderPlaceholder' to identify it as a placeholder
     return url.contains('.emptyFolderPlaceholder');
   }
 
   // Get total hours of audio analyzed
+  @pragma('vm:entry-point')
   Future<double> _getTotalHours() async {
     try {
       final response = await _client.from('analytics').select('duration');
@@ -419,7 +435,8 @@ class DatabaseService {
     }
   }
 
-  // Calculate average sentiment from analysis data
+  // Modified _calculateAverageSentiment
+  @pragma('vm:entry-point')
   Map<String, double> _calculateAverageSentiment(List<dynamic> data) {
     int sentimentCount = 0;
     final totals = data.fold<Map<String, double>>(
@@ -459,7 +476,8 @@ class DatabaseService {
     return normalizedAverages;
   }
 
-  // Get top keywords from analysis data
+  // 4. Add null safety to keyword processing
+  @pragma('vm:entry-point')
   List<String> _getTopKeywords(List<dynamic> data) {
     final allKeywords = data
         .expand((item) => (item['keywords'] as List<dynamic>? ?? []))
