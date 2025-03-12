@@ -91,19 +91,20 @@ class AnalyticsDashboard extends ConsumerWidget {
   }
 
   //function to build sentiment analysis
-  Widget _buildSentimentAnalysis(
-      BuildContext context, Map<String, double> sentiment) {
-    print('Sentiment data: $sentiment'); // Debug statement
+  Widget _buildSentimentAnalysis(BuildContext context, dynamic sentimentData) {
+    // Convert the sentiment data to proper type
+    final Map<String, double> sentiment = Map<String, double>.from(
+        (sentimentData as Map).map((key, value) =>
+            MapEntry(key.toString(), (value as num).toDouble())));
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              "Sentiment Analysis",
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
+            Text("Sentiment Analysis",
+                style: Theme.of(context).textTheme.titleLarge),
             SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -111,25 +112,19 @@ class AnalyticsDashboard extends ConsumerWidget {
                 _buildSentimentIndicator(
                   context,
                   "Positive",
-                  sentiment['positive']?.isFinite == true
-                      ? sentiment['positive']!.toInt()
-                      : 0,
+                  sentiment['positive']?.toInt() ?? 0,
                   Colors.green,
                 ),
                 _buildSentimentIndicator(
                   context,
                   "Neutral",
-                  sentiment['neutral']?.isFinite == true
-                      ? sentiment['neutral']!.toInt()
-                      : 0,
+                  sentiment['neutral']?.toInt() ?? 0,
                   Colors.orange,
                 ),
                 _buildSentimentIndicator(
                   context,
                   "Negative",
-                  sentiment['negative']?.isFinite == true
-                      ? sentiment['negative']!.toInt()
-                      : 0,
+                  sentiment['negative']?.toInt() ?? 0,
                   Colors.red,
                 ),
               ],

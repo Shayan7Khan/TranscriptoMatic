@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:collection';
 import 'dart:async';
+import 'dart:math' as math; // Add this import
 
 //Packages
 import 'package:dio/dio.dart';
@@ -216,37 +217,73 @@ class DatabaseService {
         apiKey: "AIzaSyCq6OxQkf0HZdc80M7Y1f4xKEItS7e3Nxs",
       );
 
-      final String prompt = '''
-      Analyze the provided text for sentiment. 
-      Return the sentiment analysis in the following format:
+      final String sentimentPrompt = '''
+      Analyze the sentiment of this transcribed text with high precision. Consider:
+      
+      1. Overall emotional tone and context
+      2. Specific words and phrases that indicate sentiment
+      3. Speaker's attitude and intention
+      4. Factual vs emotional content
+      
+      Provide sentiment percentages that MUST add up to 100%:
+      - Positive: enthusiasm, happiness, satisfaction, optimism
+      - Neutral: factual statements, objective information
+      - Negative: frustration, disappointment, concerns, complaints
 
-      positive: [percentage]%
-      neutral: [percentage]%
-      negative: [percentage]%
+      Format response EXACTLY as:
+      positive: X%
+      neutral: Y%
+      negative: Z%
+      
+      Text for analysis:
+      "${text.trim()}"
+      ''';
 
-      Where [percentage] is a number between 0 and 100 representing the sentiment proportion.
+      final sentimentResponse =
+          await model.generateContent([Content.text(sentimentPrompt)]);
+      final sentiment = _parseSentimentFromText(sentimentResponse.text ?? '');
 
-      Text: $text
-    ''';
+      // Separate call for keywords
+      final keywordPrompt = '''
+      Extract the 5 most significant keywords from this transcribed text.
+      Rules:
+      1. ONLY use words that appear in the text
+      2. Focus on nouns and important verbs that represent main topics
+      3. Exclude common words (like "the", "and", "or", etc.)
+      4. Order by importance to the main message
+      5. Each keyword must be a single word found in the text
 
-      final response = await model.generateContent([Content.text(prompt)]);
-      final responseText = response.text ?? '';
+      Format: Return ONLY the keywords separated by commas, nothing else.
+      
+      Text:
+      "${text.trim()}"
+      ''';
 
-      // Parse sentiment from response
-      final sentiment = _parseSentimentFromText(responseText);
+      final keywordResponse =
+          await model.generateContent([Content.text(keywordPrompt)]);
+      final keywords = (keywordResponse.text ?? '')
+          .split(',')
+          .map((word) => word.trim())
+          .where((word) =>
+              word.isNotEmpty &&
+              text.toLowerCase().contains(word.toLowerCase()))
+          .take(5)
+          .toList();
 
-      // Extract keywords (you can keep your existing keyword extraction)
-      final keywords =
-          await _extractKeywords(text); // Add this keyword extraction function
+      print(
+          'Analyzed Text: ${text.substring(0, math.min(100, text.length))}...');
+      print('Generated Sentiment: $sentiment');
+      print('Generated Keywords: $keywords');
 
       return {
         'sentiment': sentiment,
         'keywords': keywords,
       };
     } catch (e) {
+      print('Analysis error: $e');
       return {
-        'sentiment': {'positive': 50.0, 'neutral': 30.0, 'negative': 20.0},
-        'keywords': ['sample']
+        'sentiment': {'positive': 0.0, 'neutral': 0.0, 'negative': 0.0},
+        'keywords': []
       };
     }
   }
@@ -349,7 +386,12 @@ class DatabaseService {
   @pragma('vm:entry-point')
   Future<void> saveAnalysisData(Map<String, dynamic> analysis) async {
     try {
+      // Generate a unique ID using timestamp and random number
+      final uniqueId =
+          '${DateTime.now().millisecondsSinceEpoch}_${math.Random().nextInt(10000)}';
+
       final sanitized = {
+        'id': uniqueId,
         'audio_url': analysis['audio_url'].toString(),
         'sentiment': analysis['sentiment'] ??
             {'positive': 0.0, 'neutral': 0.0, 'negative': 0.0},
@@ -357,46 +399,71 @@ class DatabaseService {
             .whereType<String>()
             .toList(),
         'duration': (analysis['duration'] as num?)?.toDouble() ?? 0.0,
+        'created_at': DateTime.now().toIso8601String(),
       };
 
-      await _client.from('analytics').upsert(sanitized);
-    } catch (e) {}
+      // Always insert as a new record
+      await _client.from('analytics').insert([sanitized]);
+      print('Saved analysis with ID: $uniqueId');
+    } catch (e) {
+      print('Error saving analysis data: $e');
+    }
   }
 
   // Modified getAggregatedAnalysis
   @pragma('vm:entry-point')
   Future<Map<String, dynamic>> getAggregatedAnalysis() async {
     try {
-      final response = await _client.from('analytics').select();
+      final response = await _client
+          .from('analytics')
+          .select()
+          .order('created_at', ascending: false)
+          .limit(1);
 
       if (response.isEmpty) {
         return {
           'totalRecordings': await _getTotalRecordings(),
-          'totalHours': 0.0,
-          'sentiment': {'positive': 0.0, 'neutral': 0.0, 'negative': 0.0},
+          'totalHours': await _getTotalHours(),
+          'sentiment':
+              _convertToDoubleMap({'positive': 0, 'neutral': 0, 'negative': 0}),
           'keywords': []
         };
       }
 
-      final totalRecordings = await _getTotalRecordings();
-      final totalHours = await _getTotalHours();
-      final sentiment = _calculateAverageSentiment(response);
-      final keywords = _getTopKeywords(response);
+      final latestAnalysis = response.first;
+      print('Retrieved latest analysis: $latestAnalysis');
+
+      // Convert sentiment values to double
+      final rawSentiment = latestAnalysis['sentiment'] as Map<String, dynamic>;
+      final convertedSentiment = _convertToDoubleMap(rawSentiment);
 
       return {
-        'totalRecordings': totalRecordings,
-        'totalHours': totalHours,
-        'sentiment': sentiment,
-        'keywords': keywords
+        'totalRecordings': await _getTotalRecordings(),
+        'totalHours': await _getTotalHours(),
+        'sentiment': convertedSentiment,
+        'keywords': (latestAnalysis['keywords'] as List<dynamic>? ?? [])
+            .whereType<String>()
+            .toList(),
       };
     } catch (e) {
+      print('Error getting analysis: $e');
       return {
         'totalRecordings': await _getTotalRecordings(),
         'totalHours': 0.0,
-        'sentiment': {'positive': 0.0, 'neutral': 0.0, 'negative': 0.0},
+        'sentiment':
+            _convertToDoubleMap({'positive': 0, 'neutral': 0, 'negative': 0}),
         'keywords': []
       };
     }
+  }
+
+  // Add this helper method to ensure proper type conversion
+  Map<String, double> _convertToDoubleMap(Map<String, dynamic> input) {
+    return {
+      'positive': (input['positive'] as num?)?.toDouble() ?? 0.0,
+      'neutral': (input['neutral'] as num?)?.toDouble() ?? 0.0,
+      'negative': (input['negative'] as num?)?.toDouble() ?? 0.0,
+    };
   }
 
   // Get total number of valid recordings from Supabase
@@ -423,14 +490,33 @@ class DatabaseService {
   @pragma('vm:entry-point')
   Future<double> _getTotalHours() async {
     try {
+      // Get all duration records
       final response = await _client.from('analytics').select('duration');
-      if (response.isEmpty) {
+      print('Fetched durations: $response'); // Debug print
+
+      if (response == null || response.isEmpty) {
+        print('No duration records found');
         return 0.0;
       }
-      final totalSeconds = response.fold<double>(
-          0, (sum, item) => sum + (item['duration'] ?? 0));
-      return totalSeconds / 3600;
+
+      // Sum up all durations
+      double totalSeconds = 0.0;
+      for (var record in response) {
+        if (record['duration'] != null) {
+          double duration = (record['duration'] as num).toDouble();
+          totalSeconds += duration;
+          print('Added duration: $duration seconds'); // Debug print
+        }
+      }
+
+      // Convert to hours and round to 2 decimal places
+      double hours = totalSeconds / 3600;
+      double roundedHours = double.parse(hours.toStringAsFixed(2));
+      print('Total hours calculated: $roundedHours'); // Debug print
+
+      return roundedHours;
     } catch (e) {
+      print('Error calculating total hours: $e');
       return 0.0;
     }
   }

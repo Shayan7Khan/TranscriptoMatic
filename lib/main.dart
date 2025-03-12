@@ -71,9 +71,9 @@ class _MyAppState extends State<MyApp> {
   Future<void> _initializeSupabase() async {
     try {
       await Supabase.initialize(
-        url: 'Supabase-URL',
+        url: 'https://mvkjujnfpofbwuasrpjb.supabase.co',
         anonKey:
-            'Anon-Key',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im12a2p1am5mcG9mYnd1YXNycGpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDA2NDIxMTMsImV4cCI6MjA1NjIxODExM30.qdbTvcDUd6M3wLgrmv1rBhl4NY0A_hU1fseNPliFgkg',
       );
       print('Supabase initialized successfully');
       setState(() {
