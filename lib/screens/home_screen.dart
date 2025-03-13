@@ -266,6 +266,44 @@ class _HomeScreenContentState extends State<HomeScreenContent> {
     return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
   }
 
+  void _showSuccessSnackbar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(Icons.check_circle, color: Colors.white),
+            SizedBox(width: 8),
+            Text(message),
+          ],
+        ),
+        backgroundColor: Colors.green,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+    );
+  }
+
+  void _showErrorSnackbar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(Icons.error_outline, color: Colors.white),
+            SizedBox(width: 8),
+            Text(message),
+          ],
+        ),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -402,34 +440,77 @@ class _HomeScreenContentState extends State<HomeScreenContent> {
             physics: NeverScrollableScrollPhysics(),
             itemCount: _recordings.length,
             itemBuilder: (context, index) {
-              return Card(
-                margin: EdgeInsets.symmetric(
-                    vertical: 4, horizontal: 8), // Reduced padding
-                elevation: 2,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+              final recording = _recordings[index];
+              return Dismissible(
+                key: Key(recording['url']),
+                background: Container(
+                  color: Colors.red,
+                  alignment: Alignment.centerRight,
+                  padding: EdgeInsets.only(right: 20),
+                  child: Icon(Icons.delete, color: Colors.white),
                 ),
-                child: ListTile(
-                  contentPadding: EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 4), // Less padding inside
-                  leading: CircleAvatar(
-                    backgroundColor: Colors.blueAccent,
-                    radius: 20,
-                    child:
-                        Icon(Icons.audiotrack, color: Colors.white, size: 20),
+                direction: DismissDirection.endToStart,
+                confirmDismiss: (direction) => showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: Text('Delete Recording'),
+                    content:
+                        Text('Are you sure you want to delete this recording?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(false),
+                        child: Text('Cancel'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(true),
+                        child:
+                            Text('Delete', style: TextStyle(color: Colors.red)),
+                      ),
+                    ],
                   ),
-                  title: Text(
-                    "Recording ${index + 1}",
-                    style: Theme.of(context).textTheme.bodyLarge,
+                ),
+                onDismissed: (direction) async {
+                  final success =
+                      await _databaseService.deleteAudioFile(recording['url']);
+                  if (success) {
+                    setState(() {
+                      _recordings.removeAt(index);
+                    });
+                    _showSuccessSnackbar('Recording deleted successfully');
+                  } else {
+                    _showErrorSnackbar('Failed to delete recording');
+                    // Refresh the list to restore the item
+                    _fetchRecordings();
+                  }
+                },
+                child: Card(
+                  margin: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  subtitle: Text(
-                    "Tap to play",
-                    style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-                  ),
-                  trailing: IconButton(
-                    icon: Icon(Icons.play_circle_fill,
-                        color: Colors.blueAccent, size: 28),
-                    onPressed: () => _playAudio(_recordings[index]['url']),
+                  child: ListTile(
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    leading: CircleAvatar(
+                      backgroundColor: Colors.blueAccent,
+                      radius: 20,
+                      child:
+                          Icon(Icons.audiotrack, color: Colors.white, size: 20),
+                    ),
+                    title: Text(
+                      "Recording ${index + 1}",
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    ),
+                    subtitle: Text(
+                      "Swipe left to delete",
+                      style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                    ),
+                    trailing: IconButton(
+                      icon: Icon(Icons.play_circle_fill,
+                          color: Colors.blueAccent, size: 28),
+                      onPressed: () => _playAudio(recording['url']),
+                    ),
                   ),
                 ),
               );

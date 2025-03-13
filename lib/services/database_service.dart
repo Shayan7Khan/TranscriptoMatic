@@ -490,33 +490,27 @@ class DatabaseService {
   @pragma('vm:entry-point')
   Future<double> _getTotalHours() async {
     try {
-      // Get all duration records
       final response = await _client.from('analytics').select('duration');
-      print('Fetched durations: $response'); // Debug print
+      print('Fetched durations: $response');
 
       if (response == null || response.isEmpty) {
         print('No duration records found');
         return 0.0;
       }
 
-      // Sum up all durations
+      // Sum up all durations (keeping in seconds)
       double totalSeconds = 0.0;
       for (var record in response) {
         if (record['duration'] != null) {
           double duration = (record['duration'] as num).toDouble();
           totalSeconds += duration;
-          print('Added duration: $duration seconds'); // Debug print
         }
       }
 
-      // Convert to hours and round to 2 decimal places
-      double hours = totalSeconds / 3600;
-      double roundedHours = double.parse(hours.toStringAsFixed(2));
-      print('Total hours calculated: $roundedHours'); // Debug print
-
-      return roundedHours;
+      print('Total seconds calculated: $totalSeconds');
+      return totalSeconds; // Return total seconds instead of converting to hours
     } catch (e) {
-      print('Error calculating total hours: $e');
+      print('Error calculating total duration: $e');
       return 0.0;
     }
   }
@@ -588,5 +582,27 @@ class DatabaseService {
     }).toList();
 
     return cleanedKeywords;
+  }
+
+  // Add this new method to delete audio and its associated data
+  @pragma('vm:entry-point')
+  Future<bool> deleteAudioFile(String audioUrl) async {
+    try {
+      // Extract filename from URL
+      final uri = Uri.parse(audioUrl);
+      final fileName = uri.pathSegments.last;
+
+      // Delete from storage
+      await _client.storage.from('audio').remove([fileName]);
+
+      // Delete associated analytics
+      await _client.from('analytics').delete().eq('audio_url', audioUrl);
+
+      print('Successfully deleted audio and analytics for: $fileName');
+      return true;
+    } catch (e) {
+      print('Error deleting audio: $e');
+      return false;
+    }
   }
 }

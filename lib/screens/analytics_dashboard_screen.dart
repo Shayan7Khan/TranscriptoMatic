@@ -60,14 +60,35 @@ class AnalyticsDashboard extends ConsumerWidget {
                 data['totalRecordings'].toString())),
         SizedBox(width: 16),
         Expanded(
-            child: _buildSummaryCard(context, "Hours Analyzed",
-                data['totalHours'].toStringAsFixed(1))),
+            child: _buildSummaryCard(
+                context, "Time Analyzed", data['totalHours'])),
       ],
     );
   }
 
   //function to build summary card
-  Widget _buildSummaryCard(BuildContext context, String title, String value) {
+  Widget _buildSummaryCard(BuildContext context, String title, dynamic value) {
+    String displayValue = value.toString();
+
+    // Format time if this is the "Time Analyzed" card
+    if (title == "Time Analyzed" && value is num) {
+      final totalSeconds = value.toDouble();
+      final hours = totalSeconds ~/ 3600;
+      final minutes = (totalSeconds % 3600) ~/ 60;
+      final seconds = (totalSeconds % 60).round();
+
+      final List<String> parts = [];
+      if (hours > 0) {
+        parts.add('$hours h');
+      }
+      if (minutes > 0 || hours > 0) {
+        parts.add('${minutes.toString().padLeft(2, '0')} m');
+      }
+      parts.add('${seconds.toString().padLeft(2, '0')} s');
+
+      displayValue = parts.join(' ');
+    }
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -77,7 +98,7 @@ class AnalyticsDashboard extends ConsumerWidget {
             Text(title, style: Theme.of(context).textTheme.titleMedium),
             SizedBox(height: 8),
             Text(
-              value,
+              displayValue,
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,

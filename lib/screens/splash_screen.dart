@@ -15,7 +15,7 @@ class _SplashPageState extends State<SplashPage> {
   void initState() {
     super.initState();
     // Delay for 3 seconds and then call the callback
-    Future.delayed(const Duration(seconds: 2), () {
+    Future.delayed(const Duration(seconds: 4), () {
       widget.onInitializationComplete();
     });
   }
@@ -23,14 +23,15 @@ class _SplashPageState extends State<SplashPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Color.fromARGB(255, 243, 243, 243),
       body: Center(
         child: Container(
-          height: 200,
-          width: 200,
+          height: double.infinity,
+          width: double.infinity,
           decoration: const BoxDecoration(
             image: DecorationImage(
               fit: BoxFit.contain,
-              image: AssetImage('assets/images/splash-image.png'),
+              image: AssetImage('assets/images/transcriptomatic.png'),
             ),
           ),
         ),
